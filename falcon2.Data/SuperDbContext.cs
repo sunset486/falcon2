@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using falcon2.Core.Models;
 using falcon2.Core.Models.Auth;
+using falcon2.Core.Models.FileUploader;
 using falcon2.Data.Configurations;
 
 namespace falcon2.Data
@@ -10,6 +11,8 @@ namespace falcon2.Data
     {
         public DbSet<SuperHero> SuperHeroes { get; set; }
         public DbSet<SuperPower> SuperPowers { get; set; }
+
+        public DbSet<UploadedFile> UploadedFiles { get; set; }
 
         public SuperDbContext(DbContextOptions<SuperDbContext> options)
             :base(options)
@@ -21,6 +24,7 @@ namespace falcon2.Data
 
             builder.ApplyConfiguration(new SuperHeroConfiguration());
             builder.ApplyConfiguration(new SuperPowerConfiguration());
+            builder.ApplyConfiguration(new UploadedFileConfiguration());
         }
     }
 }

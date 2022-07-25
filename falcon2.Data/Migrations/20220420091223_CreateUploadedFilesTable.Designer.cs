@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using falcon2.Data;
 
@@ -11,9 +12,10 @@ using falcon2.Data;
 namespace falcon2.Data.Migrations
 {
     [DbContext(typeof(SuperDbContext))]
-    partial class SuperDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220420091223_CreateUploadedFilesTable")]
+    partial class CreateUploadedFilesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

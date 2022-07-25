@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Reflection;
+using System.Text;
 using AutoMapper;
 using falcon2.Core.Services;
 using falcon2.Core.Models;
 using falcon2.Api.Resources;
-using falcon2.Api.Validators;
+using falcon2.Api.Helpers;
 
 namespace falcon2.Api.Controllers
 {
@@ -17,18 +17,39 @@ namespace falcon2.Api.Controllers
     {
         private readonly ISuperHeroService _superHeroService;
         private readonly IMapper _mapper;
-        public SuperHeroController(ISuperHeroService superHeroService, IMapper mapper)
+        private readonly IReflectionInfoService _reflectionInfoService;
+        private readonly ISpreadsheetService<SuperHeroResource> _spreadsheetService;
+        private readonly IExcelImportService _excelImportService;
+        public SuperHeroController(ISuperHeroService superHeroService, IMapper mapper, 
+            IReflectionInfoService reflectionInfoService, 
+            ISpreadsheetService<SuperHeroResource> spreadsheetService,
+            IExcelImportService excelImportService)
         {
-            this._mapper = mapper;
-            this._superHeroService = superHeroService;
+            _mapper = mapper;
+            _superHeroService = superHeroService;
+            _reflectionInfoService = reflectionInfoService;
+            _spreadsheetService = spreadsheetService;
+            _excelImportService = excelImportService;
         }
 
+        [HttpGet("ReflectionForTypes")]
+        public async Task<IActionResult> GetSuperHeroTypes()
+        {
+            Console.WriteLine("\n\t\t\t---ALL INFORMATION FOR SuperHero---\n\n\n");
+            _reflectionInfoService.GetStaticInfo(typeof(SuperHero));
+            _reflectionInfoService.GetInstanceInfo(typeof(SuperHero));
+            Console.WriteLine("\t\t\t---ALL INFORMATION FOR SuperHeroResource---\n\n\n");
+            _reflectionInfoService.GetStaticInfo(typeof(SuperHeroResource));
+            _reflectionInfoService.GetInstanceInfo(typeof(SuperHeroResource));
+            return Ok("Info returned for the controller's types");
+        }
 
         [HttpGet("GetAllSuperHeroes")]
         public async Task<ActionResult<IEnumerable<SuperHero>>> GetAllSuperHeroes()
         {
             var superHeroes = await _superHeroService.GetAllSuperHeroes();
             var superHeroResources = _mapper.Map<IEnumerable<SuperHero>, IEnumerable<SuperHeroResource>>(superHeroes);
+            //CreateNewSpreadSheet(superHeroResources);
             return Ok(superHeroResources);
         }
 
@@ -40,6 +61,16 @@ namespace falcon2.Api.Controllers
             return Ok(superHeroResource);
         }
 
+        [HttpPost("GenerateSuperHeroSpreadsheet")]
+        public async Task<ActionResult<IEnumerable<SuperHero>>> CreateSuperHeroSpreadsheet()
+        {
+            var superHeroes = await _superHeroService.GetAllSuperHeroes();
+            var superHeroResources = _mapper.Map<IEnumerable<SuperHero>, IEnumerable<SuperHeroResource>>(superHeroes);
+            await _spreadsheetService.GenerateSpreadsheet(superHeroResources, "SuperHeroes");
+            return Ok("Spreadsheet created");
+        }
+
+
         [HttpPost("AddSuperHero")]
         public async Task<ActionResult<SuperHeroResource>> AddSuperHero([FromBody] SaveSuperHeroResource saveSuperHeroResource)
         {
@@ -50,6 +81,13 @@ namespace falcon2.Api.Controllers
 
             return Ok(resource);
 
+        }
+
+        [HttpPost("AddSuperHeroFromSpreadsheet")]
+        public async Task<ActionResult> AddSuperHeroFromSpreadsheet(IFormFile spreadsheet, string column, string value)
+        {
+            await _excelImportService.InsertHeroFromExcel(spreadsheet, column, value);
+            return Ok("Data succesfully inserted!");
         }
 
         [HttpPut("UpdateSuperHero{id}")]

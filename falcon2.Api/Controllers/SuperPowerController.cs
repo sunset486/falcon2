@@ -1,26 +1,41 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
 using falcon2.Core.Services;
 using falcon2.Core.Models;
 using falcon2.Api.Resources;
-using falcon2.Api.Validators;
+using falcon2.Api.Helpers;
 
 namespace falcon2.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public class SuperPowerController : ControllerBase
     {
         private readonly ISuperPowerService _superPowerService;
         private readonly IMapper _mapper;
-        public SuperPowerController(ISuperPowerService superPowerService, IMapper mapper)
+        private readonly IReflectionInfoService _reflectionInfoService;
+        private readonly ISpreadsheetService<SuperPowerResource> _spreadsheetService;
+        public SuperPowerController(ISuperPowerService superPowerService, IMapper mapper, IReflectionInfoService reflectionInfoService, ISpreadsheetService<SuperPowerResource> spreadsheetService)
         {
-            this._mapper = mapper;
-            this._superPowerService = superPowerService;
+            _mapper = mapper;
+            _superPowerService = superPowerService;
+            _reflectionInfoService = reflectionInfoService;
+            _spreadsheetService = spreadsheetService;
         }
 
+        [HttpGet("ReflectionForTypes")]
+        public async Task<IActionResult> GetSuperPowerTypes()
+        {
+            Console.WriteLine("\n\t\t\t---ALL INFORMATION FOR SuperPower---\n\n\n");
+            _reflectionInfoService.GetStaticInfo(typeof(SuperPower));
+            _reflectionInfoService.GetInstanceInfo(typeof(SuperPower));
+            Console.WriteLine("\t\t\t---ALL INFORMATION FOR SuperPowerResource---\n\n\n");
+            _reflectionInfoService.GetStaticInfo(typeof(SuperPowerResource));
+            _reflectionInfoService.GetInstanceInfo(typeof(SuperPowerResource));
+            return Ok("Info returned for the controller's types");
+        }
 
         [HttpGet("GetAllSuperPowers")]
         public async Task<ActionResult<IEnumerable<SuperPower>>> GetAllSuperPowers()
@@ -36,6 +51,15 @@ namespace falcon2.Api.Controllers
             var superPowers = await _superPowerService.GetSuperPowerById(powerId);
             var superPowerResources = _mapper.Map<SuperPower, SuperPowerResource>(superPowers);
             return Ok(superPowerResources);
+        }
+
+        [HttpPost("GenerateSuperPowerSpreadsheet")]
+        public async Task<ActionResult<IEnumerable<SuperPower>>> CreateSuperPowerSpreadsheet()
+        {
+            var superPowers = await _superPowerService.GetAllWithSuperHero();
+            var superPowerResources = _mapper.Map<IEnumerable<SuperPower>, IEnumerable<SuperPowerResource>>(superPowers);
+            await _spreadsheetService.GenerateSpreadsheet(superPowerResources, "SuperPowers");
+            return Ok("Spreadsheet created");
         }
 
         [HttpPost("AddSuperPower")]

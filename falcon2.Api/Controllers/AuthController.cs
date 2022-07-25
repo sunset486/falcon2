@@ -7,9 +7,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using AutoMapper;
 using falcon2.Core.Models.Auth;
+using falcon2.Core.Services;
 using falcon2.Api.Resources;
 using falcon2.Api.Settings;
-using falcon2.Api.Helpers;
 
 namespace falcon2.Api.Controllers
 {
@@ -18,15 +18,17 @@ namespace falcon2.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IMapper _mapper;
+        private readonly IReflectionInfoService _reflectionInfoService;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly JwtSettings _jwtSettings;
 
-        public AuthController(IMapper mapper, UserManager<User> userManager,
+        public AuthController(IMapper mapper, IReflectionInfoService reflectionInfoService, UserManager<User> userManager,
             RoleManager<Role> roleManager,
             IOptionsSnapshot<JwtSettings> jwtSettings)
         {
             _mapper = mapper;
+            _reflectionInfoService = reflectionInfoService;
             _userManager = userManager;
             _roleManager = roleManager;
             _jwtSettings = jwtSettings.Value;
@@ -57,6 +59,22 @@ namespace falcon2.Api.Controllers
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+
+        [HttpGet("ReflectionForTypes")]
+        public async Task<IActionResult> GetAuthTypes()
+        {
+            Console.WriteLine("\n\t\t\t---ALL INFORMATION FOR User---\n\n\n");
+            _reflectionInfoService.GetStaticInfo(typeof(User));
+            _reflectionInfoService.GetInstanceInfo(typeof(User));
+            Console.WriteLine("\t\t\t---ALL INFORMATION FOR Login Resources---\n\n\n");
+            _reflectionInfoService.GetStaticInfo(typeof(UserLogInResource));
+            _reflectionInfoService.GetInstanceInfo(typeof(UserLogInResource));
+            Console.WriteLine("\t\t\t---ALL INFORMATION FOR Signup Resources---\n\n\n");
+            _reflectionInfoService.GetStaticInfo(typeof(UserSignUpResource));
+            _reflectionInfoService.GetInstanceInfo(typeof(UserSignUpResource));
+            return Ok("Info returned for the controller's types");
         }
 
         [HttpPost("SignUpUser")]

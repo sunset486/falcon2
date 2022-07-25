@@ -10,7 +10,7 @@ namespace falcon2.Services
 
         public SuperHeroService(IUnitOfWork unitOfWork)
         {
-            this._unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<SuperHero> CreateSuperHero(SuperHero newHero)
